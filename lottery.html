@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>筑峰一班元旦晚会抽奖系统 🎲</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px 0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            margin: 20px auto;
+            max-height: none;
+            overflow: visible;
+        }
+
+        .title {
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .emoji {
+            font-size: 1.2em;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .lottery-display {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            font-size: 3em;
+            font-weight: bold;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lottery-display::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.5s;
+            opacity: 0;
+        }
+
+        .lottery-display.spinning::before {
+            animation: shine 0.5s ease-in-out;
+        }
+
+        @keyframes shine {
+            0% {
+                transform: translateX(-100%) translateY(-100%) rotate(45deg);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(100%) translateY(100%) rotate(45deg);
+                opacity: 0;
+            }
+        }
+
+        .lottery-display.result {
+            background: linear-gradient(45deg, #48cae4, #023e8a);
+            animation: celebration 0.6s ease-in-out;
+        }
+
+        @keyframes celebration {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff9a9e, #fecfef);
+            color: #333;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            margin: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .controls {
+            margin-top: 30px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            background: linear-gradient(45deg, #a8edea, #fed6e3);
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            display: inline-block;
+        }
+
+        .file-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .stats {
+            margin-top: 20px;
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .history {
+            margin-top: 30px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .file-info {
+            background: linear-gradient(45deg, #a8edea, #fed6e3);
+            color: #333;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .file-info.has-data {
+            background: linear-gradient(45deg, #48cae4, #023e8a);
+            color: white;
+        }
+
+        .file-info-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            font-size: 0.95em;
+        }
+
+        .file-detail-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .file-detail-item .icon {
+            margin-right: 8px;
+            font-size: 1.1em;
+        }
+
+        .delete-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a6f);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+        }
+
+        .delete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .upload-area:hover {
+            border-color: #48cae4;
+            background: rgba(72, 202, 228, 0.1);
+        }
+
+        .upload-area.dragover {
+            border-color: #48cae4;
+            background: rgba(72, 202, 228, 0.2);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            opacity: 0.6;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            font-size: 0.9em;
+            color: #999;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 8px 15px;
+            margin: 5px 0;
+            border-radius: 20px;
+            display: inline-block;
+            margin-right: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .confetti {
+            position: fixed;
+            top: -10px;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ff6b6b;
+            animation: confetti-fall 3s linear;
+        }
+
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+
+        .winner-animation {
+            animation: winner-glow 1s ease-in-out;
+        }
+
+        @keyframes winner-glow {
+            0%, 100% {
+                box-shadow: 0 0 20px #ffd700;
+            }
+            50% {
+                box-shadow: 0 0 40px #ffd700, 0 0 60px #ffd700;
+            }
+        }
+
+        /* 高级设置相关样式 */
+        .settings-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+        }
+
+        .settings-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .settings-panel.active {
+            right: 0;
+        }
+
+        .settings-header {
+            padding: 20px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .settings-content {
+            padding: 20px;
+        }
+
+        .settings-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 15px;
+        }
+
+        .settings-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .setting-item {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .setting-label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .setting-input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .setting-input[type="number"] {
+            width: 80px;
+        }
+
+        .setting-input[type="text"] {
+            width: 150px;
+        }
+
+        .setting-checkbox {
+            transform: scale(1.2);
+        }
+
+        .btn-small {
+            background: linear-gradient(45deg, #ff9a9e, #fecfef);
+            color: #333;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn-small:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .close-settings {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .probability-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background: white;
+        }
+
+        .probability-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .probability-item:last-child {
+            border-bottom: none;
+        }
+
+        .person-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .person-probability {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .person-probability input {
+            width: 60px;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .current-settings {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .current-settings h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .settings-status {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin: 20px;
+            }
+            
+            .title {
+                font-size: 2em;
+            }
+            
+            .lottery-display {
+                font-size: 2em;
+                padding: 20px;
+            }
+            
+            .btn {
+                padding: 12px 30px;
+                font-size: 1em;
+            }
+
+            .settings-panel {
+                width: 100%;
+                right: -100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">
+            <span class="emoji">🎲</span>
+            筑峰一班元旦晚会抽奖
+            <span class="emoji">🎉</span>
+        </h1>
+        
+        <!-- 文件信息显示区域 -->
+        <div class="file-info" id="fileInfo">
+            <div class="file-info-title">
+                <span>
+                    <span class="icon">📋</span>
+                    当前读取表格名称
+                </span>
+            </div>
+            <div id="fileDetails">
+                <div class="file-detail-item">
+                    <span class="icon">📄</span>
+                    <span>文件名：</span>
+                    <span id="fileName">未选择文件</span>
+                </div>
+                <div class="file-detail-item">
+                    <span class="icon">📊</span>
+                    <span>工作表数量：</span>
+                    <span id="sheetCount">0</span>
+                </div>
+                <div class="file-detail-item">
+                    <span class="icon">👥</span>
+                    <span>总人数：</span>
+                    <span id="totalCount">0</span>
+                </div>
+                <div class="file-detail-item">
+                    <span class="icon">⏰</span>
+                    <span>上传时间：</span>
+                    <span id="uploadTime">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 上传区域 -->
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">拖拽Excel或TXT文件到此处或点击上传</div>
+            <div class="upload-hint">支持 .xlsx、.xls 和 .txt 格式</div>
+            <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls,.txt" onchange="loadFile(event)">
+            <label for="fileInput" class="file-label">
+                📤 选择文件
+            </label>
+        </div>
+        
+        <div class="lottery-display" id="lotteryDisplay">
+            请先上传Excel文件
+        </div>
+        
+        <div class="controls">
+            <button class="btn" id="startBtn" onclick="startLottery()" disabled>
+                🎯 开始抽奖
+            </button>
+            
+            <button class="btn" id="resetBtn" onclick="resetLottery()" style="display: none;">
+                🔄 重新抽奖
+            </button>
+            
+            <button class="btn" id="deleteBtn" onclick="deleteData()" style="display: none;">
+                🗑️ 删除数据
+            </button>
+            
+            <button class="settings-btn" id="settingsBtn" onclick="toggleSettings()">
+                ⚙️ 高级设置
+            </button>
+        </div>
+        
+        <div class="stats" id="stats">
+            参与人数：<span id="participantCount">0</span> 人
+        </div>
+        
+        <div class="history" id="history">
+            <strong>🏆 中奖历史：</strong><br>
+            暂无中奖记录
+        </div>
+    </div>
+
+    <div class="confetti" id="confetti"></div>
+
+    <!-- 抽奖结束音效 -->
+    <audio id="finishSound" preload="auto">
+        <source src="choujiang_finish.mp3" type="audio/mpeg">
+        您的浏览器不支持音频播放。
+    </audio>
+
+    <!-- 高级设置面板 -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <h2>⚙️ 高级设置</h2>
+            <button class="close-settings" onclick="toggleSettings()">×</button>
+        </div>
+        <div class="settings-content">
+            <!-- 当前设置状态 -->
+            <div class="current-settings">
+                <h4>📊 当前设置状态</h4>
+                <div class="settings-status" id="settingsStatus">
+                    默认设置：等概率抽奖
+                </div>
+            </div>
+
+            <!-- 抽奖设置 -->
+            <div class="settings-section">
+                <h3>🎲 抽奖设置</h3>
+                
+                <div class="setting-item">
+                    <label class="setting-label">单次抽奖人数：</label>
+                    <input type="number" class="setting-input" id="lotteryCount" value="1" min="1" max="50" onchange="updateLotterySettings()">
+                </div>
+                
+                <div class="setting-item">
+                    <label class="setting-label">抽奖动画时间(秒)：</label>
+                    <input type="number" class="setting-input" id="animationDuration" value="3" min="1" max="10" step="0.5" onchange="updateLotterySettings()">
+                </div>
+                
+                <div class="setting-item">
+                    <label class="setting-label">音效：</label>
+                    <input type="checkbox" class="setting-checkbox" id="soundEnabled" checked onchange="updateLotterySettings()">
+                </div>
+                
+                <div class="setting-item">
+                    <label class="setting-label">彩带效果：</label>
+                    <input type="checkbox" class="setting-checkbox" id="confettiEnabled" checked onchange="updateLotterySettings()">
+                </div>
+            </div>
+
+            <!-- 个人概率设置 -->
+            <div class="settings-section">
+                <h3>🎯 个人概率设置</h3>
+                
+                <div class="setting-item">
+                    <label class="setting-label">启用个人概率：</label>
+                    <input type="checkbox" class="setting-checkbox" id="customProbabilityEnabled" onchange="toggleCustomProbability()">
+                </div>
+                
+                <div class="setting-item">
+                    <label class="setting-label">快速设置：</label>
+                    <div>
+                        <button class="btn-small" onclick="setAllProbability(10)">等概率(10%)</button>
+                        <button class="btn-small" onclick="setAllProbability(5)">等概率(5%)</button>
+                        <button class="btn-small" onclick="resetToDefault()">重置为默认</button>
+                    </div>
+                </div>
+                
+                <div id="probabilityList" class="probability-list" style="display: none;">
+                    <!-- 个人概率设置列表将在这里动态生成 -->
+                </div>
+                
+                <div class="setting-item">
+                    <button class="btn-small" onclick="saveProbabilitySettings()">💾 保存概率设置</button>
+                    <button class="btn-small" onclick="loadProbabilitySettings()">📂 加载设置</button>
+                </div>
+            </div>
+
+            <!-- 作弊设置 -->
+            <div class="settings-section">
+                <h3>🕵️ 作弊设置 (隐藏)</h3>
+                
+                <div class="setting-item">
+                    <label class="setting-label">指定中奖人：</label>
+                    <input type="text" class="setting-input" id="forceWinner" placeholder="输入姓名强制中奖" onchange="updateForceWinner()">
+                </div>
+                
+                <div class="setting-item">
+                    <label class="setting-label">排除人员：</label>
+                    <input type="text" class="setting-input" id="excludeNames" placeholder="用逗号分隔多个姓名" onchange="updateExcludedNames()">
+                </div>
+                
+                <div class="setting-item">
+                    <label class="setting-label">隐藏作弊模式：</label>
+                    <input type="checkbox" class="setting-checkbox" id="hideCheating" checked onchange="updateHideCheating()">
+                </div>
+                
+                <div class="setting-item">
+                    <label class="setting-label">连续同一人概率：</label>
+                    <input type="number" class="setting-input" id="repeatChance" value="0" min="0" max="100" step="5" onchange="updateRepeatChance()">
+                    <span>% (0=禁用)</span>
+                </div>
+            </div>
+
+            <!-- 数据管理 -->
+            <div class="settings-section">
+                <h3>💾 数据管理</h3>
+                
+                <div class="setting-item">
+                    <button class="btn-small" onclick="exportSettings()">📤 导出设置</button>
+                    <button class="btn-small" onclick="importSettings()">📥 导入设置</button>
+                </div>
+                
+                <div class="setting-item">
+                    <button class="btn-small" onclick="resetAllSettings()">🔄 重置所有设置</button>
+                    <button class="btn-small" onclick="clearAllData()">🗑️ 清空所有数据</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let names = [];
+        let currentData = null;
+        let isDrawing = false;
+        let currentWinner = null;
+        let history = [];
+        
+        // 高级设置相关变量
+        let advancedSettings = {
+            lotteryCount: 1,
+            animationDuration: 3,
+            soundEnabled: true,
+            confettiEnabled: true,
+            customProbabilityEnabled: false,
+            forceWinner: '',
+            excludeNames: [],
+            hideCheating: true,
+            repeatChance: 0,
+            probabilities: {} // {姓名: 概率}
+        };
+        
+        // 本地存储键名
+        const STORAGE_KEY = 'lottery_data';
+        const HISTORY_KEY = 'lottery_history';
+        const SETTINGS_KEY = 'advanced_settings';
+
+        // 验证是否为有效姓名的函数
+        function isValidName(text) {
+            if (!text || typeof text !== 'string') return false;
+            
+            const trimmed = text.trim();
+            if (!trimmed || trimmed.length === 0) return false;
+            
+            // 排除明显不是姓名的情况
+            const invalidPatterns = [
+                'nan', 'null', 'undefined', 'error', '错误',
+                '工作表', 'sheet', '表', '页', '姓名', '名字', 'name',
+                '学生', '人员', '成员', '列表', 'list', 'table', '表格',
+                '测试', 'test', '示例', 'sample', 'demo',
+                // 数字开头的
+                /^\d/, /^[0-9]/,
+                // 包含特殊关键词的
+                '合计', '小计', '平均', '总数', '数量',
+                // Excel函数或公式
+                'sum', 'count', 'average', 'max', 'min',
+                // 行政区划相关
+                '省', '市', '县', '区', '镇', '乡', '村', '街道',
+                '北京', '上海', '天津', '重庆', '河北', '山西', '辽宁',
+                '吉林', '黑龙江', '江苏', '浙江', '安徽', '福建', '江西',
+                '山东', '河南', '湖北', '湖南', '广东', '广西', '海南',
+                '四川', '贵州', '云南', '西藏', '陕西', '甘肃', '青海',
+                '宁夏', '新疆', '内蒙古', '台湾', '香港', '澳门',
+                // 行政区划代码格式（如110000, 110100等）
+                /^\d{6}$/, /^\d{4}$/,
+                // 包含完整区号的城市名
+                '北京市', '上海市', '天津市', '重庆市',
+                // 常见的非姓名词汇
+                '公司', '企业', '机构', '部门', '单位', '组织',
+                '第一', '第二', '第三', '第四', '第五',
+                '东', '西', '南', '北', '中', '前', '后', '左', '右'
+            ];
+            
+            // 检查无效模式
+            for (const pattern of invalidPatterns) {
+                if (pattern instanceof RegExp) {
+                    if (pattern.test(trimmed)) return false;
+                } else if (trimmed.toLowerCase().includes(pattern.toLowerCase())) {
+                    return false;
+                }
+            }
+            
+            // 姓名的长度限制（2-8个字符）
+            if (trimmed.length < 2 || trimmed.length > 8) return false;
+            
+            // 检查是否包含不合适的字符
+            const invalidChars = /[<>{}[\]()@#$%^&*+=|\\:";'<>?/,.~`]/;
+            if (invalidChars.test(trimmed)) return false;
+            
+            // 姓名字符验证（允许中文、英文、数字、空格）
+            const namePattern = /^[一-龥a-zA-Z0-9\s\-_\.\(\)（）]+$/;
+            if (!namePattern.test(trimmed)) return false;
+            
+            // 额外检查：确保不是纯数字或特殊格式
+            if (/^\d+$/.test(trimmed)) return false;
+            
+            // 检查是否包含过多的数字（可能是编号）
+            const digitCount = (trimmed.match(/\d/g) || []).length;
+            if (digitCount > 2) return false;
+            
+            return true;
+        }
+
+        // 音效生成函数 - 喜庆过年版
+        function playSound(type) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // 创建基础音调
+            function createTone(frequency, duration, volume = 0.1, waveType = 'sine') {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = frequency;
+                oscillator.type = waveType;
+                
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            }
+            
+            // 创建锣鼓声效
+            function createDrumSound(frequency, duration, volume = 0.2) {
+                // 低频振荡器模拟鼓声
+                const drumOsc = audioContext.createOscillator();
+                const drumGain = audioContext.createGain();
+                const drumFilter = audioContext.createBiquadFilter();
+                
+                drumOsc.connect(drumFilter);
+                drumFilter.connect(drumGain);
+                drumGain.connect(audioContext.destination);
+                
+                drumOsc.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                drumOsc.frequency.exponentialRampToValueAtTime(frequency * 0.3, audioContext.currentTime + duration);
+                
+                drumOsc.type = 'sawtooth';
+                drumFilter.type = 'lowpass';
+                drumFilter.frequency.setValueAtTime(200, audioContext.currentTime);
+                
+                drumGain.gain.setValueAtTime(volume, audioContext.currentTime);
+                drumGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                
+                drumOsc.start(audioContext.currentTime);
+                drumOsc.stop(audioContext.currentTime + duration);
+            }
+            
+            // 创建铃铛声效
+            function createBellSound(frequency, duration, volume = 0.15) {
+                const bellOsc = audioContext.createOscillator();
+                const bellGain = audioContext.createGain();
+                
+                bellOsc.connect(bellGain);
+                bellGain.connect(audioContext.destination);
+                
+                bellOsc.frequency.value = frequency;
+                bellOsc.type = 'triangle';
+                
+                bellGain.gain.setValueAtTime(0, audioContext.currentTime);
+                bellGain.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.02);
+                bellGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                
+                bellOsc.start(audioContext.currentTime);
+                bellOsc.stop(audioContext.currentTime + duration);
+            }
+            
+            // 创建和声音效
+            function createHarmony(frequencies, duration, volume = 0.08) {
+                frequencies.forEach((freq, index) => {
+                    setTimeout(() => {
+                        createTone(freq, duration, volume, 'sine');
+                    }, index * 50);
+                });
+            }
+
+            switch (type) {
+                case 'start':
+                    // 开始音效 - 简短的提示音
+                    createTone(523, 0.1, 0.15, 'triangle'); // 笛声
+                    setTimeout(() => createTone(659, 0.1, 0.15, 'triangle'), 100);
+                    setTimeout(() => createTone(784, 0.1, 0.15, 'triangle'), 200);
+                    break;
+                    
+
+                    
+                case 'winner':
+                    // 获奖音效 - 庆祝锣鼓和铃铛
+                    // 锣鼓声
+                    createDrumSound(100, 0.3, 0.3);
+                    setTimeout(() => createDrumSound(120, 0.25, 0.25), 200);
+                    setTimeout(() => createDrumSound(150, 0.2, 0.2), 400);
+                    
+                    // 铃铛声
+                    setTimeout(() => createBellSound(1047, 0.4, 0.2), 600); // 高音铃铛
+                    setTimeout(() => createBellSound(1319, 0.3, 0.15), 800); // 更高音铃铛
+                    
+                    // 庆祝和声
+                    setTimeout(() => {
+                        createHarmony([523, 659, 784, 1047], 0.6, 0.1);
+                    }, 1000);
+                    
+                    // 最后的锣声
+                    setTimeout(() => createDrumSound(60, 0.5, 0.25), 1200);
+                    break;
+            }
+        }
+
+        // 创建彩带效果
+        function createConfetti() {
+            const confettiContainer = document.getElementById('confetti');
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confettiPiece = document.createElement('div');
+                confettiPiece.className = 'confetti-piece';
+                confettiPiece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confettiPiece.style.left = Math.random() * 100 + '%';
+                confettiPiece.style.animationDelay = Math.random() * 3 + 's';
+                confettiPiece.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                
+                confettiContainer.appendChild(confettiPiece);
+                
+                setTimeout(() => {
+                    confettiContainer.removeChild(confettiPiece);
+                }, 5000);
+            }
+        }
+
+        // ============ 高级设置相关函数 ============
+        
+        // 切换设置面板
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('active');
+            if (panel.classList.contains('active')) {
+                updateSettingsDisplay();
+            }
+        }
+        
+        // 更新设置显示
+        function updateSettingsDisplay() {
+            document.getElementById('lotteryCount').value = advancedSettings.lotteryCount;
+            document.getElementById('animationDuration').value = advancedSettings.animationDuration;
+            document.getElementById('soundEnabled').checked = advancedSettings.soundEnabled;
+            document.getElementById('confettiEnabled').checked = advancedSettings.confettiEnabled;
+            document.getElementById('customProbabilityEnabled').checked = advancedSettings.customProbabilityEnabled;
+            document.getElementById('forceWinner').value = advancedSettings.forceWinner;
+            document.getElementById('excludeNames').value = advancedSettings.excludeNames.join(', ');
+            document.getElementById('hideCheating').checked = advancedSettings.hideCheating;
+            document.getElementById('repeatChance').value = advancedSettings.repeatChance;
+            
+            // 更新状态显示
+            updateSettingsStatus();
+            
+            // 如果启用了个人概率，显示概率列表
+            if (advancedSettings.customProbabilityEnabled) {
+                showProbabilityList();
+            }
+        }
+        
+        // 更新设置状态显示
+        function updateSettingsStatus() {
+            const status = document.getElementById('settingsStatus');
+            let statusText = '';
+            
+            if (advancedSettings.customProbabilityEnabled) {
+                statusText = '自定义概率抽奖';
+            } else {
+                statusText = '等概率抽奖';
+            }
+            
+            if (advancedSettings.forceWinner) {
+                statusText += ` | 强制中奖: ${advancedSettings.forceWinner}`;
+            }
+            
+            if (advancedSettings.excludeNames.length > 0) {
+                statusText += ` | 排除: ${advancedSettings.excludeNames.join(', ')}`;
+            }
+            
+            if (advancedSettings.repeatChance > 0) {
+                statusText += ` | 连续中奖概率: ${advancedSettings.repeatChance}%`;
+            }
+            
+            status.textContent = statusText || '默认设置：等概率抽奖';
+        }
+        
+        // 更新抽奖设置
+        function updateLotterySettings() {
+            advancedSettings.lotteryCount = parseInt(document.getElementById('lotteryCount').value) || 1;
+            advancedSettings.animationDuration = parseFloat(document.getElementById('animationDuration').value) || 3;
+            advancedSettings.soundEnabled = document.getElementById('soundEnabled').checked;
+            advancedSettings.confettiEnabled = document.getElementById('confettiEnabled').checked;
+            
+            saveSettings();
+            updateSettingsStatus();
+        }
+        
+        // 切换个人概率设置
+        function toggleCustomProbability() {
+            advancedSettings.customProbabilityEnabled = document.getElementById('customProbabilityEnabled').checked;
+            
+            if (advancedSettings.customProbabilityEnabled && names.length > 0) {
+                showProbabilityList();
+            } else {
+                document.getElementById('probabilityList').style.display = 'none';
+            }
+            
+            saveSettings();
+            updateSettingsStatus();
+        }
+        
+        // 显示个人概率设置列表
+        function showProbabilityList() {
+            const container = document.getElementById('probabilityList');
+            container.innerHTML = '';
+            
+            names.forEach(name => {
+                const currentProb = advancedSettings.probabilities[name] || (100 / names.length);
+                const item = document.createElement('div');
+                item.className = 'probability-item';
+                item.innerHTML = `
+                    <span class="person-name">${name}</span>
+                    <div class="person-probability">
+                        <input type="number" value="${currentProb}" min="0" max="100" step="0.1" 
+                               onchange="updatePersonProbability('${name}', this.value)">
+                        <span>%</span>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+            
+            container.style.display = 'block';
+        }
+        
+        // 更新个人概率
+        function updatePersonProbability(name, value) {
+            const prob = parseFloat(value) || 0;
+            if (prob >= 0 && prob <= 100) {
+                advancedSettings.probabilities[name] = prob;
+            }
+        }
+        
+        // 设置所有人等概率
+        function setAllProbability(percentage) {
+            if (names.length === 0) {
+                alert('请先加载姓名列表');
+                return;
+            }
+            
+            const probPerPerson = percentage / names.length;
+            names.forEach(name => {
+                advancedSettings.probabilities[name] = probPerPerson;
+            });
+            
+            showProbabilityList();
+        }
+        
+        // 重置为默认设置
+        function resetToDefault() {
+            advancedSettings.probabilities = {};
+            showProbabilityList();
+        }
+        
+        // 保存概率设置
+        function saveProbabilitySettings() {
+            // 验证概率总和
+            const totalProb = Object.values(advancedSettings.probabilities).reduce((sum, prob) => sum + prob, 0);
+            if (Math.abs(totalProb - 100) > 0.1) {
+                if (!confirm(`当前概率总和为 ${totalProb.toFixed(1)}%，不等于100%。是否继续保存？`)) {
+                    return;
+                }
+            }
+            
+            saveSettings();
+            alert('概率设置已保存！');
+        }
+        
+        // 加载概率设置
+        function loadProbabilitySettings() {
+            const stored = localStorage.getItem(SETTINGS_KEY);
+            if (stored) {
+                try {
+                    const settings = JSON.parse(stored);
+                    if (settings.probabilities) {
+                        advancedSettings.probabilities = settings.probabilities;
+                        showProbabilityList();
+                        alert('概率设置已加载！');
+                    }
+                } catch (error) {
+                    alert('加载设置失败！');
+                }
+            } else {
+                alert('没有找到保存的设置！');
+            }
+        }
+        
+        // 更新强制中奖人
+        function updateForceWinner() {
+            advancedSettings.forceWinner = document.getElementById('forceWinner').value.trim();
+            saveSettings();
+            updateSettingsStatus();
+        }
+        
+        // 更新排除人员
+        function updateExcludedNames() {
+            const input = document.getElementById('excludeNames').value;
+            advancedSettings.excludeNames = input.split(',').map(name => name.trim()).filter(name => name);
+            saveSettings();
+            updateSettingsStatus();
+        }
+        
+        // 更新隐藏作弊模式
+        function updateHideCheating() {
+            advancedSettings.hideCheating = document.getElementById('hideCheating').checked;
+            saveSettings();
+        }
+        
+        // 更新连续同一人概率
+        function updateRepeatChance() {
+            advancedSettings.repeatChance = parseInt(document.getElementById('repeatChance').value) || 0;
+            saveSettings();
+            updateSettingsStatus();
+        }
+        
+        // 导出设置
+        function exportSettings() {
+            const dataStr = JSON.stringify(advancedSettings, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `lottery_settings_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+        
+        // 导入设置
+        function importSettings() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const settings = JSON.parse(e.target.result);
+                        advancedSettings = { ...advancedSettings, ...settings };
+                        updateSettingsDisplay();
+                        saveSettings();
+                        alert('设置导入成功！');
+                    } catch (error) {
+                        alert('设置文件格式错误！');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+        
+        // 重置所有设置
+        function resetAllSettings() {
+            if (confirm('确定要重置所有高级设置吗？')) {
+                advancedSettings = {
+                    lotteryCount: 1,
+                    animationDuration: 3,
+                    soundEnabled: true,
+                    confettiEnabled: true,
+                    customProbabilityEnabled: false,
+                    forceWinner: '',
+                    excludeNames: [],
+                    hideCheating: true,
+                    repeatChance: 0,
+                    probabilities: {}
+                };
+                updateSettingsDisplay();
+                saveSettings();
+                alert('所有设置已重置！');
+            }
+        }
+        
+        // 清空所有数据
+        function clearAllData() {
+            if (confirm('确定要清空所有数据吗？这将删除姓名、历史记录和所有设置。')) {
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(HISTORY_KEY);
+                localStorage.removeItem(SETTINGS_KEY);
+                
+                // 重置所有数据
+                currentData = null;
+                names = [];
+                history = [];
+                advancedSettings = {
+                    lotteryCount: 1,
+                    animationDuration: 3,
+                    soundEnabled: true,
+                    confettiEnabled: true,
+                    customProbabilityEnabled: false,
+                    forceWinner: '',
+                    excludeNames: [],
+                    hideCheating: true,
+                    repeatChance: 0,
+                    probabilities: {}
+                };
+                
+                // 更新界面
+                updateFileInfo();
+                updateStats();
+                resetLottery();
+                updateHistoryDisplay();
+                updateSettingsDisplay();
+                
+                alert('所有数据已清空！');
+            }
+        }
+        
+        // 保存设置到本地存储
+        function saveSettings() {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(advancedSettings));
+        }
+        
+        // 加载设置从本地存储
+        function loadSettings() {
+            const stored = localStorage.getItem(SETTINGS_KEY);
+            if (stored) {
+                try {
+                    const settings = JSON.parse(stored);
+                    advancedSettings = { ...advancedSettings, ...settings };
+                } catch (error) {
+                    console.error('加载设置失败：', error);
+                }
+            }
+        }
+        
+        // 加权随机选择函数
+        function weightedRandomSelection(candidates, weights) {
+            const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+            let random = Math.random() * totalWeight;
+            
+            for (let i = 0; i < candidates.length; i++) {
+                random -= weights[i];
+                if (random <= 0) {
+                    return candidates[i];
+                }
+            }
+            
+            return candidates[candidates.length - 1];
+        }
+        
+        // 获取可参与抽奖的候选人
+        function getLotteryCandidates() {
+            let candidates = [...names];
+            
+            // 排除指定人员
+            if (advancedSettings.excludeNames.length > 0) {
+                candidates = candidates.filter(name => !advancedSettings.excludeNames.includes(name));
+            }
+            
+            // 如果启用了连续同一人概率，检查上一次中奖者
+            if (advancedSettings.repeatChance > 0 && history.length > 0) {
+                const lastWinner = history[0].name;
+                if (!candidates.includes(lastWinner)) {
+                    // 上一次中奖者被排除了，不做任何处理
+                } else {
+                    const repeatChance = advancedSettings.repeatChance / 100;
+                    if (Math.random() < repeatChance) {
+                        // 连续同一人
+                        return [lastWinner];
+                    }
+                }
+            }
+            
+            return candidates;
+        }
+        
+        // 开始抽奖
+        function startLottery() {
+            if (isDrawing || names.length === 0) return;
+            
+            isDrawing = true;
+            const display = document.getElementById('lotteryDisplay');
+            const startBtn = document.getElementById('startBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            
+            startBtn.disabled = true;
+            display.className = 'lottery-display spinning';
+            
+            if (advancedSettings.soundEnabled) {
+                playSound('start');
+            }
+            
+            // 获取候选人
+            const candidates = getLotteryCandidates();
+            if (candidates.length === 0) {
+                alert('没有可参与抽奖的人员！');
+                isDrawing = false;
+                startBtn.disabled = false;
+                return;
+            }
+            
+            // 确定抽奖人数
+            const lotteryCount = Math.min(advancedSettings.lotteryCount, candidates.length);
+            
+            let spinCount = 0;
+            const maxSpins = Math.floor(advancedSettings.animationDuration * 30); // 每秒30帧
+            const spinInterval = 1000 / 30; // 30FPS
+            
+            const spinTimer = setInterval(() => {
+                let displayNames = [];
+                
+                // 动画显示随机姓名
+                for (let i = 0; i < lotteryCount; i++) {
+                    const randomName = candidates[Math.floor(Math.random() * candidates.length)];
+                    displayNames.push(randomName);
+                }
+                
+                display.textContent = displayNames.join(', ');
+                
+                spinCount++;
+                
+                if (spinCount >= maxSpins) {
+                    clearInterval(spinTimer);
+                    
+                    // 最终结果计算
+                    let winners = [];
+                    
+                    if (advancedSettings.forceWinner && candidates.includes(advancedSettings.forceWinner)) {
+                        // 强制中奖模式
+                        winners = [advancedSettings.forceWinner];
+                        // 如果需要多个中奖者，从剩余候选人中随机选择
+                        let remainingCandidates = candidates.filter(name => name !== advancedSettings.forceWinner);
+                        while (winners.length < lotteryCount && remainingCandidates.length > 0) {
+                            const randomIndex = Math.floor(Math.random() * remainingCandidates.length);
+                            winners.push(remainingCandidates[randomIndex]);
+                            remainingCandidates.splice(randomIndex, 1);
+                        }
+                    } else if (advancedSettings.customProbabilityEnabled && Object.keys(advancedSettings.probabilities).length > 0) {
+                        // 自定义概率模式
+                        const availableCandidates = candidates.filter(name => advancedSettings.probabilities[name] !== undefined);
+                        const weights = availableCandidates.map(name => advancedSettings.probabilities[name]);
+                        
+                        for (let i = 0; i < lotteryCount; i++) {
+                            if (availableCandidates.length === 0) break;
+                            
+                            // 如果不允许重复中奖，从候选列表中移除已中奖者
+                            let currentCandidates = [...availableCandidates];
+                            let currentWeights = [...weights];
+                            
+                            if (i > 0) {
+                                // 移除已中奖者
+                                for (const winner of winners) {
+                                    const index = currentCandidates.indexOf(winner);
+                                    if (index > -1) {
+                                        currentCandidates.splice(index, 1);
+                                        currentWeights.splice(index, 1);
+                                    }
+                                }
+                            }
+                            
+                            if (currentCandidates.length > 0) {
+                                const winner = weightedRandomSelection(currentCandidates, currentWeights);
+                                winners.push(winner);
+                            }
+                        }
+                    } else {
+                        // 等概率模式
+                        const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+                        winners = shuffled.slice(0, lotteryCount);
+                    }
+                    
+                    // 显示结果
+                    display.textContent = winners.join(', ');
+                    display.className = 'lottery-display result winner-animation';
+                    
+                    if (advancedSettings.soundEnabled) {
+                        playSound('winner');
+                        // 播放抽奖结束音效
+                        setTimeout(() => {
+                            const finishSound = document.getElementById('finishSound');
+                            if (finishSound) {
+                                finishSound.currentTime = 0;
+                                finishSound.play().catch(e => console.log('音频播放失败:', e));
+                            }
+                        }, 800); // 延迟800ms播放，让中奖音效先播放
+                    }
+                    
+                    if (advancedSettings.confettiEnabled) {
+                        createConfetti();
+                    }
+                    
+                    // 添加到历史记录
+                    winners.forEach(winner => {
+                        addToHistory(winner);
+                    });
+                    
+                    currentWinner = winners.join(', ');
+                    
+                    // 更新按钮状态
+                    startBtn.style.display = 'none';
+                    resetBtn.style.display = 'inline-block';
+                    
+                    isDrawing = false;
+                }
+            }, spinInterval);
+        }
+
+        // 重置抽奖
+        function resetLottery() {
+            const display = document.getElementById('lotteryDisplay');
+            const startBtn = document.getElementById('startBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            
+            display.textContent = '点击开始抽奖';
+            display.className = 'lottery-display';
+            
+            startBtn.style.display = 'inline-block';
+            resetBtn.style.display = 'none';
+            
+            startBtn.disabled = false;
+        }
+
+        // 添加到历史记录
+        function addToHistory(winner) {
+            history.unshift({
+                name: winner,
+                time: new Date().toLocaleTimeString()
+            });
+            
+            if (history.length > 10) {
+                history.pop();
+            }
+            
+            updateHistoryDisplay();
+            saveHistory();
+        }
+
+        // 更新历史显示
+        function updateHistoryDisplay() {
+            const historyDiv = document.getElementById('history');
+            
+            if (history.length === 0) {
+                historyDiv.innerHTML = '<strong>🏆 中奖历史：</strong><br>暂无中奖记录';
+                return;
+            }
+            
+            let historyHTML = '<strong>🏆 中奖历史：</strong><br>';
+            history.forEach((record, index) => {
+                historyHTML += `<span class="history-item">${record.name} (${record.time})</span>`;
+            });
+            
+            historyDiv.innerHTML = historyHTML;
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            document.getElementById('participantCount').textContent = names.length;
+        }
+
+        // 加载Excel文件
+        function loadFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.name.match(/\.(xlsx|xls|txt)$/i)) {
+                alert('请选择Excel文件（.xlsx 或 .xls）或TXT文件（.txt）');
+                return;
+            }
+            
+            // 如果是TXT文件，使用TXT解析方式
+            if (file.name.match(/\.(txt)$/i)) {
+                loadTXTFile(file);
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    const allNames = [];
+                    const sheetData = {};
+                    const sheetNames = workbook.SheetNames;
+                    
+                    // 遍历所有工作表
+                    sheetNames.forEach(sheetName => {
+                        const worksheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
+                        
+                        const sheetNamesList = [];
+                        const invalidHeaders = ['姓名', '名字', 'name', '学生', '学生姓名', '人员', '成员', '人员姓名', '姓名列表', '成员列表'];
+                        
+                        // 遍历所有行，跳过表头
+                        jsonData.forEach((row, rowIndex) => {
+                            // 跳过第一行（通常是表头）
+                            if (rowIndex === 0) return;
+                            
+                            row.forEach(cell => {
+                                if (cell && cell.toString().trim()) {
+                                    const name = cell.toString().trim();
+                                    
+                                    // 严格的姓名验证
+                                    if (isValidName(name)) {
+                                        sheetNamesList.push(name);
+                                        allNames.push(name);
+                                    }
+                                }
+                            });
+                        });
+                        
+                        // 去重
+                        const uniqueSheetNames = [...new Set(sheetNamesList)];
+                        sheetData[sheetName] = uniqueSheetNames;
+                    });
+                    
+                    // 整体去重
+                    const uniqueNames = [...new Set(allNames)];
+                    
+                    // 调试信息：显示每个工作表的有效姓名数量
+                    console.log('Excel文件分析结果：');
+                    console.log(`文件名：${file.name}`);
+                    console.log(`工作表数量：${sheetNames.length}`);
+                    console.log('各工作表详细信息：');
+                    
+                    Object.keys(sheetData).forEach(sheetName => {
+                        const sheetNames = sheetData[sheetName];
+                        console.log(`  工作表 "${sheetName}": ${sheetNames.length} 个有效姓名`);
+                        console.log(`    姓名列表: ${sheetNames.join(', ')}`);
+                    });
+                    
+                    console.log(`总有效姓名数量：${uniqueNames.length}`);
+                    console.log(`完整姓名列表：${uniqueNames.join(', ')}`);
+                    
+                    // 保存数据
+                    currentData = {
+                        filename: file.name,
+                        uploadTime: new Date().toISOString(),
+                        sheetData: sheetData,
+                        allNames: uniqueNames.sort(),
+                        totalCount: uniqueNames.length
+                    };
+                    
+                    names = currentData.allNames;
+                    
+                    // 保存到本地存储
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
+                    
+                    // 更新界面
+                    updateFileInfo();
+                    updateStats();
+                    resetLottery();
+                    
+                    const successMessage = `成功加载Excel文件！
+文件名：${file.name}
+工作表数量：${sheetNames.length}
+总人数：${uniqueNames.length}
+
+详细信息请查看浏览器控制台。`;
+                    
+                    alert(successMessage);
+                    
+                } catch (error) {
+                    console.error('文件解析错误：', error);
+                    alert('文件解析失败，请检查Excel文件格式是否正确');
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // TXT文件解析函数
+        function loadTXTFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    const lines = content.split('\n').map(line => line.trim()).filter(line => line);
+                    
+                    const allNames = [];
+                    let processedLines = 0;
+                    let skippedLines = 0;
+                    
+                    console.log(`TXT文件解析开始 - 文件名: ${file.name}`);
+                    console.log(`总行数: ${lines.length}`);
+                    
+                    // 解析每一行
+                    lines.forEach((line, index) => {
+                        // 跳过空行
+                        if (!line) {
+                            skippedLines++;
+                            return;
+                        }
+                        
+                        // 处理不同格式的行
+                        let name = '';
+                        
+                        // 格式1: 纯姓名（每行一个姓名）
+                        if (!line.includes(',') && !line.includes('\t') && !line.includes(' ')) {
+                            name = line;
+                        }
+                        // 格式2: 逗号分隔
+                        else if (line.includes(',')) {
+                            const parts = line.split(',');
+                            name = parts[0].trim();
+                        }
+                        // 格式3: Tab分隔
+                        else if (line.includes('\t')) {
+                            const parts = line.split('\t');
+                            name = parts[0].trim();
+                        }
+                        // 格式4: 空格分隔
+                        else if (line.includes(' ')) {
+                            const parts = line.split(' ');
+                            name = parts[0].trim();
+                        }
+                        // 格式5: 其他分隔符
+                        else {
+                            const parts = line.split(/[|;]/);
+                            name = parts[0].trim();
+                        }
+                        
+                        // 验证提取的姓名
+                        if (name && isValidName(name)) {
+                            allNames.push(name);
+                            processedLines++;
+                            console.log(`  行${index + 1}: "${line}" -> 姓名: "${name}"`);
+                        } else {
+                            skippedLines++;
+                            console.log(`  行${index + 1}: "${line}" -> 跳过（无效姓名）`);
+                        }
+                    });
+                    
+                    // 去重
+                    const uniqueNames = [...new Set(allNames)];
+                    
+                    console.log(`TXT解析结果:`);
+                    console.log(`  处理行数: ${processedLines}`);
+                    console.log(`  跳过行数: ${skippedLines}`);
+                    console.log(`  有效姓名数: ${uniqueNames.length}`);
+                    console.log(`  姓名列表: ${uniqueNames.join(', ')}`);
+                    
+                    // 如果没有找到有效姓名，显示错误
+                    if (uniqueNames.length === 0) {
+                        alert('TXT文件中没有找到有效的姓名。请检查文件格式，确保每行包含一个有效的姓名。');
+                        return;
+                    }
+                    
+                    // 保存数据
+                    currentData = {
+                        filename: file.name,
+                        uploadTime: new Date().toISOString(),
+                        fileType: 'txt',
+                        allNames: uniqueNames.sort(),
+                        totalCount: uniqueNames.length,
+                        stats: {
+                            processedLines: processedLines,
+                            skippedLines: skippedLines,
+                            totalLines: lines.length
+                        }
+                    };
+                    
+                    names = currentData.allNames;
+                    
+                    // 保存到本地存储
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
+                    
+                    // 更新界面
+                    updateFileInfo();
+                    updateStats();
+                    resetLottery();
+                    
+                    const successMessage = `成功加载TXT文件！
+文件名：${file.name}
+处理行数：${processedLines}
+跳过行数：${skippedLines}
+有效姓名数：${uniqueNames.length}
+
+详细信息请查看浏览器控制台。`;
+                    
+                    alert(successMessage);
+                    
+                } catch (error) {
+                    console.error('TXT文件解析错误：', error);
+                    alert('TXT文件解析失败，请检查文件格式是否正确');
+                }
+            };
+            
+            reader.readAsText(file, 'UTF-8');
+        }
+        
+        // 更新文件信息显示
+        function updateFileInfo() {
+            const fileInfo = document.getElementById('fileInfo');
+            const fileNameSpan = document.getElementById('fileName');
+            const sheetCountSpan = document.getElementById('sheetCount');
+            const totalCountSpan = document.getElementById('totalCount');
+            const uploadTimeSpan = document.getElementById('uploadTime');
+            const startBtn = document.getElementById('startBtn');
+            const deleteBtn = document.getElementById('deleteBtn');
+            
+            if (currentData) {
+                fileInfo.className = 'file-info has-data';
+                fileNameSpan.textContent = currentData.filename;
+                sheetCountSpan.textContent = Object.keys(currentData.sheetData).length;
+                totalCountSpan.textContent = currentData.totalCount;
+                uploadTimeSpan.textContent = new Date(currentData.uploadTime).toLocaleString();
+                
+                startBtn.disabled = false;
+                deleteBtn.style.display = 'inline-block';
+            } else {
+                fileInfo.className = 'file-info';
+                fileNameSpan.textContent = '未选择文件';
+                sheetCountSpan.textContent = '0';
+                totalCountSpan.textContent = '0';
+                uploadTimeSpan.textContent = '-';
+                
+                startBtn.disabled = true;
+                deleteBtn.style.display = 'none';
+            }
+        }
+        
+        // 删除数据
+        function deleteData() {
+            if (confirm('确定要删除当前数据吗？这将清除所有姓名和历史记录。')) {
+                currentData = null;
+                names = [];
+                history = [];
+                
+                // 清除本地存储
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(HISTORY_KEY);
+                
+                // 更新界面
+                updateFileInfo();
+                updateStats();
+                resetLottery();
+                updateHistoryDisplay();
+                
+                // 重置文件输入
+                document.getElementById('fileInput').value = '';
+                
+                alert('数据已删除！');
+            }
+        }
+        
+        // 拖拽上传功能
+        function setupDragAndDrop() {
+            const uploadArea = document.getElementById('uploadArea');
+            
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (file.name.match(/\.(xlsx|xls|txt)$/i)) {
+                        // 模拟文件选择
+                        const event = {
+                            target: {
+                                files: [file]
+                            }
+                        };
+                        loadFile(event);
+                    } else {
+                        alert('请拖拽Excel文件（.xlsx 或 .xls）或TXT文件（.txt）');
+                    }
+                }
+            });
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 读取本地存储的数据
+            loadFromStorage();
+            
+            // 设置拖拽上传
+            setupDragAndDrop();
+            
+            // 读取历史记录
+            loadHistory();
+            
+            // 加载高级设置
+            loadSettings();
+            
+            console.log('班级抽奖系统已加载！');
+            if (names.length > 0) {
+                console.log(`共有 ${names.length} 个姓名参与抽奖`);
+            }
+            
+            // 检查TXT文件支持
+            if (window.FileReader) {
+                console.log('支持TXT文件读取功能');
+            }
+        });
+        
+        // 从本地存储加载数据
+        function loadFromStorage() {
+            try {
+                const storedData = localStorage.getItem(STORAGE_KEY);
+                if (storedData) {
+                    currentData = JSON.parse(storedData);
+                    names = currentData.allNames || [];
+                    updateFileInfo();
+                    updateStats();
+                }
+            } catch (error) {
+                console.error('加载本地数据失败：', error);
+            }
+        }
+        
+        // 加载历史记录
+        function loadHistory() {
+            try {
+                const storedHistory = localStorage.getItem(HISTORY_KEY);
+                if (storedHistory) {
+                    history = JSON.parse(storedHistory);
+                    updateHistoryDisplay();
+                }
+            } catch (error) {
+                console.error('加载历史记录失败：', error);
+            }
+        }
+        
+        // 保存历史记录
+        function saveHistory() {
+            try {
+                localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+            } catch (error) {
+                console.error('保存历史记录失败：', error);
+            }
+        }
+
+        // 添加键盘快捷键
+        document.addEventListener('keydown', function(event) {
+            if (event.code === 'Space' && !isDrawing) {
+                event.preventDefault();
+                startLottery();
+            }
+        });
+    </script>
+</body>
+</html>
